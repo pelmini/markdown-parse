@@ -5,6 +5,22 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 
 public class MarkdownParse {
+
+    // Loop with a stack until finding the corresponding closeParen
+    static int findCloseParen(String markdown, int openParen) {
+        int closeParen = openParen + 1;
+        int openParenCount = 1;
+        while (openParenCount > 0) {
+            if (markdown.charAt(closeParen) == '(') {
+                openParenCount++;
+            } else if (markdown.charAt(closeParen) == ')') {
+                openParenCount--;
+            }
+            closeParen++;
+        }
+        return closeParen - 1;
+
+    }
     public static ArrayList<String> getLinks(String markdown) {
         ArrayList<String> toReturn = new ArrayList<>();
         // find the next [, then find the ], then find the (, then take up to
@@ -12,35 +28,25 @@ public class MarkdownParse {
         int currentIndex = 0;
         while(currentIndex < markdown.length()) {
             int nextOpenBracket = markdown.indexOf("[", currentIndex);
-            // System.out.println("nextopenbrack:" + nextOpenBracket);
-
+            // System.out.format("%d\t%d\t%s\n", currentIndex, nextOpenBracket, toReturn);
             int nextCloseBracket = markdown.indexOf("]", nextOpenBracket);
-            // System.out.println("nextCloseBracket:" + nextCloseBracket);
-
             int openParen = markdown.indexOf("(", nextCloseBracket);
-            // System.out.println("openParen:" + openParen);
 
-            int closeParen = markdown.indexOf(")", openParen);
-            // System.out.println("closeParen:" + closeParen);
-            // System.out.println("Currentindex:" + currentIndex);
-            // System.out.println("MarkdownLength:" + markdown.length());
+            // The close paren we need may not be the next one in the file
+            int closeParen = findCloseParen(markdown, openParen);
             
-            if(markdown.charAt(nextOpenBracket - 1) == '!')
-            {
-                currentIndex = closeParen + 1;
-                continue; 
+            if(nextOpenBracket == -1 || nextCloseBracket == -1
+                  || closeParen == -1 || openParen == -1) {
+                return toReturn;
             }
-
-            if(closeParen == -1 || openParen == -1)
-            {
-                toReturn.add(markdown.substring(0,0));
-                currentIndex = markdown.length();
-            }
-            else{
-                toReturn.add(markdown.substring(openParen + 1, closeParen));
+            String potentialLink = markdown.substring(openParen + 1, closeParen).trim();
+            if(potentialLink.indexOf(" ") == -1 && potentialLink.indexOf("\n") == -1) {
+                toReturn.add(potentialLink);
                 currentIndex = closeParen + 1;
             }
-        
+            else {
+                currentIndex = currentIndex + 1;
+            }
         }
         return toReturn;
     }
